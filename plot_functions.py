@@ -9,9 +9,11 @@ def plot_results(results, target_pos, title = '', num = 0):
 
     fig = plt.figure(figsize=(12, 10))
 
-    ax1 = fig.add_subplot(2, 2, 1)
+    ax1 = fig.add_subplot(3, 2, 1)
+    ax3 = fig.add_subplot(3, 2, 3)
+    ax5 = fig.add_subplot(3, 2, 5)
+
     ax2 = fig.add_subplot(2, 2, 2)
-    ax3 = fig.add_subplot(2, 2, 3)
     ax4 = fig.add_subplot(2, 2, 4, projection='3d')
 
     ax1.plot(results['time'], results['x'], label='x')
@@ -41,10 +43,16 @@ def plot_results(results, target_pos, title = '', num = 0):
     ax4.set_ylabel('Y axis')
     ax4.set_zlabel('Z axis')
 
+
+    ax5.plot(results['time'], results['phi'], label='phi')
+    ax5.plot(results['time'], results['theta'], label='theta')
+    ax5.plot(results['time'], results['psi'], label='psi')
+    ax5.legend()
+
     plt.suptitle(title)
 
     try:
-        plt.savefig('last_fig_plot_results' + str(num) + '.png')
+        plt.savefig(r'figures\last_fig_plot_results' + str(num) + '.png')
     except:
         print('Image open or something, could not save.')
 
@@ -72,6 +80,6 @@ def plot_training_historic(history):
     ax2.legend()
 
     try:
-        plt.savefig('results.png')
+        plt.savefig(r'figures\results.png')
     except:
         print('Image open or something, could not save.')

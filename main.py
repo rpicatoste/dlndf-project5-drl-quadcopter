@@ -37,6 +37,7 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
         writer.writerow(labels)
         while True:
             rotor_speeds = agent.act(state)
+            #rotor_speeds = [405]*4
             next_state, reward, done = task.step(rotor_speeds)
 
             to_write = [task.sim.time] + list(task.sim.pose) + list(task.sim.v) + list(task.sim.angular_v) + list(rotor_speeds) + [reward]
@@ -93,7 +94,8 @@ agent = DDPG(task,
 
 results = run_test_episode(agent, task, file_output)
 plot_results(results, target_pos, 'Run without training')
-# import sys;sys.exit()
+
+#plt.show();import sys;sys.exit()
 # Train
 history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
 start = time.time()
@@ -108,7 +110,10 @@ for i_episode in range(1, num_episodes+1):
         state = next_state
 
         if done:
-            history['i_episode'].append(i_episode)
+            if len(history['i_episode'])>1:
+                history['i_episode'].append(history['i_episode'][-1] + 1)
+            else:
+                history['i_episode'].append(1)
             history['total_reward'].append(agent.total_reward)
             history['score'].append(agent.score)
             print("\rEpisode = {: 4d}, score = {:7.3f}, total_reward = {:7.3f}".format(
@@ -148,10 +153,6 @@ input('Press enter to finish')
 #plt.show(block=False)
 #
 #
-#plt.figure()
-#plt.plot(results['time'], results['phi'], label='phi')
-#plt.plot(results['time'], results['theta'], label='theta')
-#plt.plot(results['time'], results['psi'], label='psi')
 #plt.legend()
 #_ = plt.ylim()
 #plt.show(block=False)

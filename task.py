@@ -44,8 +44,10 @@ class Task():
 
         # reward = 1.0 - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
         # reward = 1.0 - 0.3 * self.manhattan_distance(self.sim.pose[:3], self.target_pos)
-        reward = - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
+        # reward = - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
 
+        reward = -np.abs(self.sim.pose[:3]).sum() * 90/np.pi
+        reward += -np.abs(self.sim.angular_v).sum() * 90/np.pi
 
 
         return reward

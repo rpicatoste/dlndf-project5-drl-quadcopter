@@ -82,8 +82,10 @@ class DDPG():
          # Save experience / reward
         self.memory.add(self.last_state, action, reward, next_state, done)
         # print('  Memory size: {}, vals: '.format(len(self.memory)))
-        # print('    - last_state: {}'.format(self.last_state[:3]))
-        # print('    - next_state: {}'.format(next_state[:3]))
+        # print('    - last_pos {}'.format(self.last_state[:3]))
+        # print('    - next_pos: {}'.format(next_state[:3]))
+        # print('    - last_ang {}'.format(self.last_state[3:6]))
+        # print('    - next_ang: {}'.format(next_state[3:6]))
         # print('    - action: {}'.format(action))
         # print('    - reward: {}'.format(reward))
         # print('    - done: {}'.format(done))

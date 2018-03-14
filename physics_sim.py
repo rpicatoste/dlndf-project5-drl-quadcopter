@@ -24,7 +24,13 @@ def body_to_earth_frame(ii, jj, kk):
 
 
 class PhysicsSim():
-    def __init__(self, init_pose=None, init_velocities=None, init_angle_velocities=None, runtime=5.):
+
+    def __init__(self,
+                 init_pose=None,
+                 init_velocities=None,
+                 init_angle_velocities=None,
+                 runtime=5.):
+
         self.init_pose = np.array([0.0, 0.1, 10.2, 0.3, 0.4, 0.5]) if init_pose is None else init_pose
         self.init_velocities = np.array([0.0, 0.0, 0.0]) if init_velocities is None else init_velocities
         self.init_angle_velocities = np.array([0.0, 0.0, 0.0]) if init_angle_velocities is None else init_angle_velocities
@@ -62,11 +68,11 @@ class PhysicsSim():
         self.done = False
 
         # For debug, leave here.
-        # print('\nSim reset to values: ')
-        # print('  - self.pose: {}'.format(self.pose))
-        # print('  - v: {}'.format(self.v))
-        # print('  - init_velocities: {}'.format(self.init_velocities))
-        # print('  - angular_v: {}'.format(self.angular_v))
+        # print('\nSim reset to values: \n' +
+        #         '  - self.pose: {}\n'.format(self.pose) +
+        #         '  - v: {}\n'.format(self.v) +
+        #         '  - init_velocities: {}\n'.format(self.init_velocities) +
+        #         '  - angular_v: {}\n'.format(self.angular_v))
 
     def find_body_velocity(self):
         body_velocity = np.matmul(earth_to_body_frame(*list(self.pose[3:])), self.v)
@@ -125,6 +131,7 @@ class PhysicsSim():
         return thrusts
 
     def next_timestep(self, rotor_speeds):
+
         self.calc_prop_wind_speed()
         thrusts = self.get_propeler_thrust(rotor_speeds)
         self.linear_accel = self.get_linear_forces(thrusts) / self.mass
@@ -136,7 +143,7 @@ class PhysicsSim():
 
         self.angular_accels = moments / self.moments_of_inertia
         angles = self.pose[3:] + self.angular_v * self.dt + 0.5 * self.angular_accels * self.angular_accels * self.dt
-        angles = (angles + 2 * np.pi) % (2 * np.pi)
+        #angles = (angles + 2 * np.pi) % (2 * np.pi)
         self.angular_v = self.angular_v + self.angular_accels * self.dt
 
         new_positions = []
