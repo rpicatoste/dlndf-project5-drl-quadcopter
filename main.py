@@ -1,10 +1,12 @@
 #%%
-
+import time
 import sys
 import random
 import csv
 import numpy as np
 from task import Task
+from agents.agent import DDPG
+from plot_functions import plot_results
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -16,20 +18,19 @@ from agents.ou_noise import OUNoise
 #init_velocities = np.array([0., 0., 0.])         # initial velocities
 #init_angle_velocities = np.array([0., 0., 0.])   # initial angle velocities
 file_output = 'data.txt'                         # file name for saved results
-
+plt.close('all')
 # Setup
 #task = Task(init_pose, init_velocities, init_angle_velocities, runtime)
 
 # Run task with agent
-def run_episode(agent, task, file_output):
-    done = False
+def run_episode(agent, task : Task, file_output):
+    print('\nRunning episode ...')
+
     labels = ['time', 'x', 'y', 'z', 'phi', 'theta', 'psi', 'x_velocity',
               'y_velocity', 'z_velocity', 'phi_velocity', 'theta_velocity',
-              'psi_velocity', 'rotor_speed1', 'rotor_speed2', 'rotor_speed3', 'rotor_speed4']
+              'psi_velocity', 'rotor_speed1', 'rotor_speed2', 'rotor_speed3', 'rotor_speed4','reward']
     results = {x : [] for x in labels}
-    
-       
-    
+
     agent.noise = OUNoise(agent.action_size, 0.0, 0.0, 0.0)
     
     state = agent.reset_episode() # start a new episode
@@ -42,11 +43,14 @@ def run_episode(agent, task, file_output):
         writer.writerow(labels)
         while True:
             rotor_speeds = agent.act(state)
-            _, _, done = task.step(rotor_speeds)
-            to_write = [task.sim.time] + list(task.sim.pose) + list(task.sim.v) + list(task.sim.angular_v) + list(rotor_speeds)
+            next_state, reward, done = task.step(rotor_speeds)
+
+            to_write = [task.sim.time] + list(task.sim.pose) + list(task.sim.v) + list(task.sim.angular_v) + list(rotor_speeds) + [reward]
             for ii in range(len(labels)):
                 results[labels[ii]].append(to_write[ii])
             writer.writerow(to_write)
+
+            state = next_state
             if done:
                 break
             
@@ -61,38 +65,12 @@ def run_episode(agent, task, file_output):
                          agent.exploration_theta, 
                          agent.exploration_sigma)
 
+    print('Finished episode!\n')
     return results
 
-def plot_results(results, target_pos):
-    
-    #%matplotlib inline
-    f, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
-    ax1.plot(results['time'], results['x'], label='x')
-    ax1.plot(results['time'], results['y'], label='y')
-    ax1.plot(results['time'], results['z'], label='z')
-    ax1.legend()
-    
-    ax2.plot(results['time'], results['rotor_speed1'], label='Rotor 1 revolutions / second')
-    ax2.plot(results['time'], results['rotor_speed2'], label='Rotor 2 revolutions / second')
-    ax2.plot(results['time'], results['rotor_speed3'], label='Rotor 3 revolutions / second')
-    ax2.plot(results['time'], results['rotor_speed4'], label='Rotor 4 revolutions / second')
-    ax2.legend()
-    plt.show()  
-    
-    fig = plt.figure(figsize=(12,6))
-    ax = fig.gca(projection='3d')
-    ax.plot(results['x'], results['y'], results['z'], label='parametric curve')
-    ax.plot([target_pos[0]], [target_pos[1]], [target_pos[2]], 'ro', markersize=12, label='target')
-    ax.plot([results['x'][0]],  [results['y'][0]],  [results['z'][0]], 'gx', markersize=6, label='start')
-    ax.plot([results['x'][-1]], [results['y'][-1]], [results['z'][-1]], 'bx', markersize=6, label='end')
-    ax.legend()
-    
-    plt.show()
-
 #%% Training with agen
-from agents.agent import DDPG
-
-num_episodes = 15000 # 1000
+print('\n\nStart training...')
+num_episodes = 10 # 1000
 target_pos      = np.array([ 0.0, 0.0, 10.0])
 init_pose       = np.array([10.0, 0.0,  0.0, 0.0, 0.0, 0.0])
 init_velocities = np.array([ 0.0, 0.0,  0.0])
@@ -100,13 +78,15 @@ init_velocities = np.array([ 0.0, 0.0,  0.0])
 #            init_velocities = init_velocities,
 #            target_pos=target_pos)
 task = Task(target_pos=target_pos)
-agent = DDPG(task) 
+agent = DDPG(task)
 
 results = run_episode(agent, task, file_output)
-plot_results(results, target_pos)
+plot_results(results, target_pos, 'Run without training')
  
 # Train
 history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
+start = time.time()
+done = False
 for i_episode in range(1, num_episodes+1):
     state = agent.reset_episode() # start a new episode
     while True:
@@ -123,16 +103,16 @@ for i_episode in range(1, num_episodes+1):
                 i_episode, agent.score, agent.total_reward), end="")
             break
     sys.stdout.flush()
-    
-f, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
-ax1.plot(history['i_episode'], history['total_reward'], label='total_reward')
-ax1.set_ylim([min(history['total_reward'])/10.0, max(history['total_reward'])])
-ax1.legend()
 
-ax2.plot(history['i_episode'], history['score'], label='score')
-ax2.set_ylim([min(history['score'])/10.0, max(history['score'])])
-ax2.legend()
-plt.show()  
+    if i_episode%50 == 0:
+        results = run_episode(agent, task, file_output)
+        plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode))
+
+
+print('\nTime training: {:.1f} seconds\n'.format(time.time() - start))
+
+plot_training_historic(history)
+
 # the pose, velocity, and angular velocity of the quadcopter at the end of the episode
 print(task.sim.pose)
 print(task.sim.v)
@@ -140,7 +120,7 @@ print(task.sim.angular_v)
     
 results = run_episode(agent, task, file_output)
 
-plot_results(results, target_pos)
+plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes))
 
 #%%
 #plt.figure()
@@ -149,7 +129,7 @@ plot_results(results, target_pos)
 #plt.plot(results['time'], results['z_velocity'], label='z_hat')
 #plt.legend()
 #_ = plt.ylim()
-#plt.show()
+#plt.show(block=False)
 #
 #
 #plt.figure()
@@ -158,7 +138,7 @@ plot_results(results, target_pos)
 #plt.plot(results['time'], results['psi'], label='psi')
 #plt.legend()
 #_ = plt.ylim()
-#plt.show()
+#plt.show(block=False)
 #
 #
 #plt.figure()
@@ -167,7 +147,7 @@ plot_results(results, target_pos)
 #plt.plot(results['time'], results['psi_velocity'], label='psi_velocity')
 #plt.legend()
 #_ = plt.ylim()
-#plt.show()
+#plt.show(block=False)
 
 
 

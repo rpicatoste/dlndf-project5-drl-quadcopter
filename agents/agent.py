@@ -1,5 +1,6 @@
 import numpy as np
 
+from task import Task
 from .actor import Actor
 from .critic import Critic
 from .ou_noise import OUNoise
@@ -8,7 +9,8 @@ from .replay_buffer import ReplayBuffer
 
 class DDPG():
     """Reinforcement Learning agent that learns using DDPG."""
-    def __init__(self, task):
+    def __init__(self,
+                 task : Task):
         self.task = task
         self.state_size = task.state_size
         self.action_size = task.action_size
@@ -80,10 +82,12 @@ class DDPG():
 
     def act(self, states):
         """Returns actions for given state(s) as per current policy."""
-#        state = np.reshape(state, [-1, self.state_size])
         state = np.reshape(states, [-1, self.state_size])
         action = self.actor_local.model.predict(state)[0]
+        # print('  - act - states - ', states[:6])
+        # print('  - act - action 1               - {:.2f}'.format(action[0]))
         noise = self.noise.sample()
+        # print('  - act - list(action + noise) 1 - {:.2f}'.format(list(action + noise)[0]))
         return list(action + noise)  # add some noise for exploration
 
     def learn(self, experiences):
