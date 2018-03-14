@@ -8,6 +8,7 @@ from task import Task
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from agents.ou_noise import OUNoise
 
 ## Modify the values below to give the quadcopter a different starting position.
 #runtime = 5.                                     # time limit of the episode
@@ -26,6 +27,11 @@ def run_episode(agent, task, file_output):
               'y_velocity', 'z_velocity', 'phi_velocity', 'theta_velocity',
               'psi_velocity', 'rotor_speed1', 'rotor_speed2', 'rotor_speed3', 'rotor_speed4']
     results = {x : [] for x in labels}
+    
+       
+    
+    agent.noise = OUNoise(agent.action_size, 0.0, 0.0, 0.0)
+    
     state = agent.reset_episode() # start a new episode
     print('state', state)
     print('state.shape', state.shape)
@@ -48,6 +54,12 @@ def run_episode(agent, task, file_output):
     print(task.sim.pose)
     print(task.sim.v)
     print(task.sim.angular_v)
+    
+     # Noise process
+    agent.noise = OUNoise(agent.action_size, 
+                         agent.exploration_mu, 
+                         agent.exploration_theta, 
+                         agent.exploration_sigma)
 
     return results
 
@@ -80,20 +92,21 @@ def plot_results(results, target_pos):
 #%% Training with agen
 from agents.agent import DDPG
 
-num_episodes = 200 # 1000
+num_episodes = 15000 # 1000
 target_pos      = np.array([ 0.0, 0.0, 10.0])
 init_pose       = np.array([10.0, 0.0,  0.0, 0.0, 0.0, 0.0])
 init_velocities = np.array([ 0.0, 0.0,  0.0])
-task = Task(init_pose = init_pose,
-            init_velocities = init_velocities,
-            target_pos=target_pos)
-#task = Task(target_pos=target_pos)
+#task = Task(init_pose = init_pose,
+#            init_velocities = init_velocities,
+#            target_pos=target_pos)
+task = Task(target_pos=target_pos)
 agent = DDPG(task) 
 
 results = run_episode(agent, task, file_output)
 plot_results(results, target_pos)
  
 # Train
+history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
 for i_episode in range(1, num_episodes+1):
     state = agent.reset_episode() # start a new episode
     while True:
@@ -103,11 +116,23 @@ for i_episode in range(1, num_episodes+1):
         agent.step(action, reward, next_state, done)
         state = next_state
         if done:
-            print("\rEpisode = {:4d}, score = {:7.3f} (best = {:7.3f}), noise_scale = {}".format(
-                i_episode, agent.score, agent.best_score, agent.noise_scale), end="")  # [debug]
+            history['i_episode'].append(i_episode)
+            history['total_reward'].append(agent.total_reward)
+            history['score'].append(agent.score)
+            print("\rEpisode = {: 4d}, score = {:7.3f}, total_reward = {:7.3f}".format(
+                i_episode, agent.score, agent.total_reward), end="")
             break
     sys.stdout.flush()
     
+f, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
+ax1.plot(history['i_episode'], history['total_reward'], label='total_reward')
+ax1.set_ylim([min(history['total_reward'])/10.0, max(history['total_reward'])])
+ax1.legend()
+
+ax2.plot(history['i_episode'], history['score'], label='score')
+ax2.set_ylim([min(history['score'])/10.0, max(history['score'])])
+ax2.legend()
+plt.show()  
 # the pose, velocity, and angular velocity of the quadcopter at the end of the episode
 print(task.sim.pose)
 print(task.sim.v)

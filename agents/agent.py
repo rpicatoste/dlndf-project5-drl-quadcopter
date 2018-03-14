@@ -48,17 +48,27 @@ class DDPG():
         # Mine 
         self.score = 0
         self.best_score = 0
-        self.noise_scale = 0
+        
+        # Reward and score
+        self.total_reward = 0
+        self.count = 0
 
     def reset_episode(self):
         self.noise.reset()
         state = self.task.reset()
+        self.total_reward = 0
+        self.count = 0
         self.last_state = state
         return state
 
     def step(self, action, reward, next_state, done):
          # Save experience / reward
         self.memory.add(self.last_state, action, reward, next_state, done)
+
+        # store rewards
+        self.total_reward += reward
+        self.count += 1      
+        self.score = self.total_reward / float(self.count) if self.count else 0.0
 
         # Learn, if enough samples are available in memory
         if len(self.memory) > self.batch_size:
@@ -73,10 +83,12 @@ class DDPG():
 #        state = np.reshape(state, [-1, self.state_size])
         state = np.reshape(states, [-1, self.state_size])
         action = self.actor_local.model.predict(state)[0]
-        return list(action + self.noise.sample())  # add some noise for exploration
+        noise = self.noise.sample()
+        return list(action + noise)  # add some noise for exploration
 
     def learn(self, experiences):
         """Update policy and value parameters using given batch of experience tuples."""
+                
         # Convert experience tuples to separate arrays for each element (states, actions, rewards, etc.)
         states = np.vstack([e.state for e in experiences if e is not None])
         actions = np.array([e.action for e in experiences if e is not None]).astype(np.float32).reshape(-1, self.action_size)
