@@ -9,18 +9,12 @@ from agents.agent import DDPG
 from plot_functions import plot_results, plot_training_historic
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from agents.ou_noise import OUNoise
 
 ## Modify the values below to give the quadcopter a different starting position.
-#runtime = 5.                                     # time limit of the episode
-#init_pose = np.array([0., 0., 10., 0., 0., 0.])  # initial pose
-#init_velocities = np.array([0., 0., 0.])         # initial velocities
-#init_angle_velocities = np.array([0., 0., 0.])   # initial angle velocities
 file_output = 'data.txt'                         # file name for saved results
 plt.close('all')
-# Setup
-#task = Task(init_pose, init_velocities, init_angle_velocities, runtime)
+
 
 # Run task with agent
 def run_test_episode(agent : DDPG, task : Task, file_output):
@@ -53,13 +47,8 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
             state = next_state
             if done:
                 break
-            
-    # the pose, velocity, and angular velocity of the quadcopter at the end of the episode
-    print(task.sim.pose)
-    print(task.sim.v)
-    print(task.sim.angular_v)
-    
-     # Noise process
+
+     # Restore noise
     agent.noise = OUNoise(agent.action_size, 
                          agent.exploration_mu, 
                          agent.exploration_theta, 
@@ -68,17 +57,39 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
     print('Finished test episode!\n')
     return results
 
+#%% Parameters
+exploration_mu = 0
+exploration_theta = 0.15
+exploration_sigma = 0.2
+buffer_size = 100000
+batch_size = 64
+gamma = 0.99
+tau = 0.001
+actor_learning_rate = 0.0001
+critic_learning_rate = 0.001
+
+
 #%% Training with agen
 print('\n\nStart training...')
-num_episodes = 1000 # 1000
+num_episodes = 500 # 1000
 num_episodes_to_plot = max(100, num_episodes/5)
 target_pos      = np.array([ 0.0, 0.0, 10.0])
-init_pose       = np.array([ 0.0, 0.0,  5.0, 0.0, 0.0, 0.0])
+init_pose       = np.array([ 0.0, 0.0, 10.0, 0.0, 0.0, 0.0])
 init_velocities = np.array([ 0.0, 0.0,  0.0])
 task = Task(init_pose = init_pose,
            init_velocities = init_velocities,
            target_pos=target_pos)
-agent = DDPG(task)
+agent = DDPG(task,
+             exploration_mu =exploration_mu,
+             exploration_theta = exploration_theta,
+             exploration_sigma = exploration_sigma,
+             buffer_size = buffer_size,
+             batch_size = batch_size,
+             gamma = gamma,
+             tau = tau,
+             actor_learning_rate = actor_learning_rate,
+             critic_learning_rate = critic_learning_rate
+             )
 
 results = run_test_episode(agent, task, file_output)
 plot_results(results, target_pos, 'Run without training')
@@ -107,7 +118,7 @@ for i_episode in range(1, num_episodes+1):
 
     if i_episode%num_episodes_to_plot == 0:
         results = run_test_episode(agent, task, file_output)
-        plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode))
+        plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode), i_episode)
 
 
 print('\nTime training: {:.1f} seconds\n'.format(time.time() - start))
@@ -122,6 +133,10 @@ print(task.sim.angular_v)
 results = run_test_episode(agent, task, file_output)
 
 plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes))
+
+plt.show(block=False)
+input('Press enter to finish')
+
 
 #%%
 #plt.figure()

@@ -10,7 +10,17 @@ from .replay_buffer import ReplayBuffer
 class DDPG():
     """Reinforcement Learning agent that learns using DDPG."""
     def __init__(self,
-                 task : Task):
+                 task : Task,
+                 exploration_mu = 0,
+                 exploration_theta = 0.15,
+                 exploration_sigma = 0.2,
+                 buffer_size = 100000,
+                 batch_size = 64,
+                 gamma = 0.99,
+                 tau = 0.001,
+                 actor_learning_rate = 0.0001,
+                 critic_learning_rate = 0.001
+    ):
         self.task = task
         self.state_size = task.state_size
         self.action_size = task.action_size
@@ -18,34 +28,42 @@ class DDPG():
         self.action_high = task.action_high
 
         # Actor (Policy) Model
-        self.actor_local = Actor(self.state_size, self.action_size, self.action_low, self.action_high)
-        self.actor_target = Actor(self.state_size, self.action_size, self.action_low, self.action_high)
+        self.actor_local = Actor(self.state_size,
+                                 self.action_size,
+                                 self.action_low,
+                                 self.action_high,
+                                 learning_rate = actor_learning_rate)
+        self.actor_target = Actor(self.state_size,
+                                  self.action_size,
+                                  self.action_low,
+                                  self.action_high,
+                                 learning_rate = actor_learning_rate)
 
         # Critic (Value) Model
-        self.critic_local = Critic(self.state_size, self.action_size)
-        self.critic_target = Critic(self.state_size, self.action_size)
+        self.critic_local = Critic(self.state_size, self.action_size, learning_rate = critic_learning_rate)
+        self.critic_target = Critic(self.state_size, self.action_size, learning_rate = critic_learning_rate)
 
         # Initialize target model parameters with local model parameters
         self.critic_target.model.set_weights(self.critic_local.model.get_weights())
         self.actor_target.model.set_weights(self.actor_local.model.get_weights())
 
         # Noise process
-        self.exploration_mu = 0
-        self.exploration_theta = 0.15
-        self.exploration_sigma = 0.2
+        self.exploration_mu = exploration_mu
+        self.exploration_theta = exploration_theta
+        self.exploration_sigma = exploration_sigma
         self.noise = OUNoise(self.action_size, 
                              self.exploration_mu, 
                              self.exploration_theta, 
                              self.exploration_sigma)
 
         # Replay memory
-        self.buffer_size = 100000
-        self.batch_size = 64
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
         self.memory = ReplayBuffer(self.buffer_size, self.batch_size)
 
         # Algorithm parameters
-        self.gamma = 0.99  # discount factor
-        self.tau = 0.001  # for soft update of target parameters
+        self.gamma = gamma  # discount factor
+        self.tau = tau  # for soft update of target parameters
 
         # Reward and score
         self.score = 0

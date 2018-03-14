@@ -1,9 +1,10 @@
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 
 
-def plot_results(results, target_pos, title = ''):
+def plot_results(results, target_pos, title = '', num = 0):
     # %matplotlib inline
 
     fig = plt.figure(figsize=(12, 10))
@@ -42,16 +43,35 @@ def plot_results(results, target_pos, title = ''):
 
     plt.suptitle(title)
 
-    plt.show(block=False)
+    try:
+        plt.savefig('last_fig_plot_results' + str(num) + '.png')
+    except:
+        print('Image open or something, could not save.')
 
 
 def plot_training_historic(history):
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+    N = 20
+    total_reward = np.array(history['total_reward'])
+    total_reward = np.convolve(total_reward, np.ones((N,)) / N, mode='valid')
+    total_reward = np.concatenate([np.array([total_reward[0]]*(N-1)), total_reward])
+
+    score = np.array(history['score'])
+    score = np.convolve(score, np.ones((N,)) / N, mode='valid')
+    score = np.concatenate([np.array([score[0]]*(N-1)), score])
+
     ax1.plot(history['i_episode'], history['total_reward'], label='total_reward')
-    ax1.set_ylim([min(history['total_reward']) / 10.0, max(history['total_reward'])])
+    ax1.plot(history['i_episode'], total_reward, label='total_reward_filt')
+    ax1.set_ylim([min(total_reward), max(total_reward)])
     ax1.legend()
 
     ax2.plot(history['i_episode'], history['score'], label='score')
-    ax2.set_ylim([min(history['score']) / 10.0, max(history['score'])])
+    ax2.plot(history['i_episode'], score, label='score_filt')
+    ax2.set_ylim([min(score), max(score)])
     ax2.legend()
-    plt.show(block=False)
+
+    try:
+        plt.savefig('results.png')
+    except:
+        print('Image open or something, could not save.')

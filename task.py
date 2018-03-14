@@ -23,6 +23,7 @@ class Task():
         self.action_repeat = 3
 
         self.state_size = self.action_repeat * 6
+
         self.action_low = 0
         self.action_high = 900
         self.action_size = 4
@@ -43,7 +44,7 @@ class Task():
 
         # reward = 1.0 - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
         # reward = 1.0 - 0.3 * self.manhattan_distance(self.sim.pose[:3], self.target_pos)
-        reward = - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)**2
+        reward = - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
 
 
 
