@@ -7,6 +7,7 @@ import numpy as np
 from task import Task
 from agents.agent import DDPG
 from plot_functions import plot_results, plot_training_historic
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 from agents.ou_noise import OUNoise
@@ -28,6 +29,7 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
     agent.noise = OUNoise(agent.action_size, 0.0, 0.0, 0.0)
     
     state = agent.reset_episode() # start a new episode
+    rewards_lists = defaultdict(list)
     print('state', state)
     print('state.shape', state.shape)
     
@@ -38,7 +40,9 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
         while True:
             rotor_speeds = agent.act(state)
             #rotor_speeds = [405]*4
-            next_state, reward, done = task.step(rotor_speeds)
+            next_state, reward, done, new_rewards = task.step(rotor_speeds)
+            for key, value in new_rewards.items():
+                rewards_lists[key].append(value)
 
             to_write = [task.sim.time] + list(task.sim.pose) + list(task.sim.v) + list(task.sim.angular_v) + list(rotor_speeds) + [reward]
             for ii in range(len(labels)):
@@ -56,7 +60,7 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
                          agent.exploration_sigma)
 
     print('Finished test episode!\n')
-    return results
+    return results, rewards_lists
 
 #%% Parameters
 exploration_mu = 0
@@ -69,10 +73,10 @@ tau = 0.001
 actor_learning_rate = 0.0001
 critic_learning_rate = 0.001
 
+num_episodes = 1000 # 1000
 
 #%% Training with agen
 print('\n\nStart training...')
-num_episodes = 500 # 1000
 num_episodes_to_plot = max(100, num_episodes/5)
 target_pos      = np.array([ 0.0, 0.0, 10.0])
 init_pose       = np.array([ 0.0, 0.0, 10.0, 0.0, 0.0, 0.0])
@@ -92,11 +96,13 @@ agent = DDPG(task,
              critic_learning_rate = critic_learning_rate
              )
 
-results = run_test_episode(agent, task, file_output)
-plot_results(results, target_pos, 'Run without training')
+results, rewards_lists = run_test_episode(agent, task, file_output)
+plot_results(results, target_pos, 'Run without training', rewards_lists)
 
 #plt.show();import sys;sys.exit()
 # Train
+max_reward = -np.inf
+last_max_reward = 2*num_episodes_to_plot
 history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
 start = time.time()
 done = False
@@ -104,7 +110,7 @@ for i_episode in range(1, num_episodes+1):
     state = agent.reset_episode() # start a new episode
     while True:
         action = agent.act(state) 
-        next_state, reward, done = task.step(action)
+        next_state, reward, done, _ = task.step(action)
         
         agent.step(action, reward, next_state, done)
         state = next_state
@@ -122,9 +128,13 @@ for i_episode in range(1, num_episodes+1):
     sys.stdout.flush()
 
     if i_episode%num_episodes_to_plot == 0:
-        results = run_test_episode(agent, task, file_output)
-        plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode), i_episode)
-
+        results, rewards_lists = run_test_episode(agent, task, file_output)
+        plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode), rewards_lists, i_episode)
+    if (max_reward < reward) and (last_max_reward + 50 < i_episode):
+        results, rewards_lists = run_test_episode(agent, task, file_output)
+        plot_results(results, target_pos, 'New max at: {} episodes.'.format(i_episode), rewards_lists, i_episode)
+        max_reward = reward
+        last_max_reward = i_episode
 
 print('\nTime training: {:.1f} seconds\n'.format(time.time() - start))
 
@@ -135,9 +145,9 @@ print(task.sim.pose)
 print(task.sim.v)
 print(task.sim.angular_v)
     
-results = run_test_episode(agent, task, file_output)
+results, rewards_lists = run_test_episode(agent, task, file_output)
 
-plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes))
+plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes), rewards_lists)
 
 plt.show()
 
