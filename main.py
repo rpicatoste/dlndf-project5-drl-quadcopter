@@ -139,8 +139,7 @@ results = run_test_episode(agent, task, file_output)
 
 plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes))
 
-plt.show(block=False)
-input('Press enter to finish')
+plt.show()
 
 
 #%%
