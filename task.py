@@ -33,25 +33,33 @@ class Task():
         # Goal
         self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
 
-    def manhattan_distance(self, point_a, point_b):
 
-        return (abs(point_a - point_b)).sum()
+    def distance_reward(self):
+        current_position = self.sim.pose[:3]
+        target_position = self.target_pos
 
-    def euclidean_distance(self, point_a, point_b):
+        #reward = -1.0 * (abs(current_position - target_position)).sum()
+        reward = -1.0 * np.linalg.norm(current_position - target_position)
 
-        return np.linalg.norm(point_a - point_b)
+        if reward < -100.0:
+            reward = -100.0
+
+        return reward
+
+    def angles_reward(self):
+
+        reward = -np.abs(self.sim.pose[3:6]).sum() * 18/np.pi
+        if reward < -100.0:
+            reward = -100.0
+
+        return reward
 
     def get_reward(self):
         """Uses current pose of sim to return reward."""
         rewards = defaultdict(float)
-        rewards['surviving'] = 10.0/50.0 # plus 10 per second surviving at 50 Hz
-
-        # reward = 1.0 - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
-        # reward = 1.0 - 0.3 * self.manhattan_distance(self.sim.pose[:3], self.target_pos)
-
-        rewards['distance'] = - 1.0 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
-
-        rewards['angles'] = -np.abs(self.sim.pose[3:6]).sum() * 18/np.pi
+        rewards['surviving'] = 1.0
+        rewards['distance'] = self.distance_reward()
+        rewards['angles'] = self.angles_reward()
       #  reward += -np.abs(self.sim.angular_v).sum() * 90/np.pi
 
         reward = sum([x for x in rewards.values()])
