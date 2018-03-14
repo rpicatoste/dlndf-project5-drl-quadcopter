@@ -34,10 +34,19 @@ class Task():
 
         return (abs(point_a - point_b)).sum()
 
+    def euclidean_distance(self, point_a, point_b):
+
+        return np.linalg.norm(point_a - point_b)
+
     def get_reward(self):
         """Uses current pose of sim to return reward."""
 
-        reward = 1.0 - 0.3 * self.manhattan_distance(self.sim.pose[:3], self.target_pos)
+        # reward = 1.0 - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)
+        # reward = 1.0 - 0.3 * self.manhattan_distance(self.sim.pose[:3], self.target_pos)
+        reward = - 0.3 * self.euclidean_distance(self.sim.pose[:3], self.target_pos)**2
+
+
+
         return reward
 
     def step(self, rotor_speeds):

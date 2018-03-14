@@ -25,9 +25,9 @@ def body_to_earth_frame(ii, jj, kk):
 
 class PhysicsSim():
     def __init__(self, init_pose=None, init_velocities=None, init_angle_velocities=None, runtime=5.):
-        self.init_pose = init_pose
-        self.init_velocities = init_velocities
-        self.init_angle_velocities = init_angle_velocities
+        self.init_pose = np.array([0.0, 0.1, 10.2, 0.3, 0.4, 0.5]) if init_pose is None else init_pose
+        self.init_velocities = np.array([0.0, 0.0, 0.0]) if init_velocities is None else init_velocities
+        self.init_angle_velocities = np.array([0.0, 0.0, 0.0]) if init_angle_velocities is None else init_angle_velocities
         self.runtime = runtime
 
         self.gravity = -9.81  # m/s
@@ -53,13 +53,20 @@ class PhysicsSim():
 
     def reset(self):
         self.time = 0.0
-        self.pose = np.array([0.0, 0.1, 10.2, 0.3, 0.4, 0.5]) if self.init_pose is None else self.init_pose
-        self.v = np.array([0.0, 0.0, 0.0]) if self.init_velocities is None else self.init_velocities
-        self.angular_v = np.array([0.0, 0.0, 0.0]) if self.init_angle_velocities is None else self.init_angle_velocities
+        self.pose = np.copy(self.init_pose)
+        self.v = np.copy(self.init_velocities)
+        self.angular_v = np.copy(self.init_angle_velocities)
         self.linear_accel = np.array([0.0, 0.0, 0.0])
         self.angular_accels = np.array([0.0, 0.0, 0.0])
         self.prop_wind_speed = np.array([0., 0., 0., 0.])
         self.done = False
+
+        # For debug, leave here.
+        # print('\nSim reset to values: ')
+        # print('  - self.pose: {}'.format(self.pose))
+        # print('  - v: {}'.format(self.v))
+        # print('  - init_velocities: {}'.format(self.init_velocities))
+        # print('  - angular_v: {}'.format(self.angular_v))
 
     def find_body_velocity(self):
         body_velocity = np.matmul(earth_to_body_frame(*list(self.pose[3:])), self.v)

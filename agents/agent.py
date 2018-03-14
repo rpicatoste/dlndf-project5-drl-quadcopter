@@ -66,7 +66,12 @@ class DDPG():
     def step(self, action, reward, next_state, done):
          # Save experience / reward
         self.memory.add(self.last_state, action, reward, next_state, done)
-
+        # print('  Memory size: {}, vals: '.format(len(self.memory)))
+        # print('    - last_state: {}'.format(self.last_state[:3]))
+        # print('    - next_state: {}'.format(next_state[:3]))
+        # print('    - action: {}'.format(action))
+        # print('    - reward: {}'.format(reward))
+        # print('    - done: {}'.format(done))
         # store rewards
         self.total_reward += reward
         self.count += 1      
@@ -100,6 +105,7 @@ class DDPG():
         dones = np.array([e.done for e in experiences if e is not None]).astype(np.uint8).reshape(-1, 1)
         next_states = np.vstack([e.next_state for e in experiences if e is not None])
 
+        # print('  Learning from {} experiences! (received {})'.format(len(states), len(experiences)))
         # Get predicted next-state actions and Q values from target models
         #     Q_targets_next = critic_target(next_state, actor_target(next_state))
         actions_next = self.actor_target.model.predict_on_batch(next_states)

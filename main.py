@@ -6,7 +6,7 @@ import csv
 import numpy as np
 from task import Task
 from agents.agent import DDPG
-from plot_functions import plot_results
+from plot_functions import plot_results, plot_training_historic
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -24,7 +24,7 @@ plt.close('all')
 
 # Run task with agent
 def run_episode(agent, task : Task, file_output):
-    print('\nRunning episode ...')
+    print('\nRunning test episode ...')
 
     labels = ['time', 'x', 'y', 'z', 'phi', 'theta', 'psi', 'x_velocity',
               'y_velocity', 'z_velocity', 'phi_velocity', 'theta_velocity',
@@ -65,24 +65,24 @@ def run_episode(agent, task : Task, file_output):
                          agent.exploration_theta, 
                          agent.exploration_sigma)
 
-    print('Finished episode!\n')
+    print('Finished test episode!\n')
     return results
 
 #%% Training with agen
 print('\n\nStart training...')
-num_episodes = 10 # 1000
+num_episodes = 1000 # 1000
+num_episodes_to_plot = max(100, num_episodes/5)
 target_pos      = np.array([ 0.0, 0.0, 10.0])
-init_pose       = np.array([10.0, 0.0,  0.0, 0.0, 0.0, 0.0])
+init_pose       = np.array([ 0.0, 0.0,  5.0, 0.0, 0.0, 0.0])
 init_velocities = np.array([ 0.0, 0.0,  0.0])
-#task = Task(init_pose = init_pose,
-#            init_velocities = init_velocities,
-#            target_pos=target_pos)
-task = Task(target_pos=target_pos)
+task = Task(init_pose = init_pose,
+           init_velocities = init_velocities,
+           target_pos=target_pos)
 agent = DDPG(task)
 
 results = run_episode(agent, task, file_output)
 plot_results(results, target_pos, 'Run without training')
- 
+# import sys;sys.exit()
 # Train
 history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
 start = time.time()
