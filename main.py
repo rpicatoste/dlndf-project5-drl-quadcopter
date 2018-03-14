@@ -23,7 +23,7 @@ plt.close('all')
 #task = Task(init_pose, init_velocities, init_angle_velocities, runtime)
 
 # Run task with agent
-def run_episode(agent, task : Task, file_output):
+def run_test_episode(agent : DDPG, task : Task, file_output):
     print('\nRunning test episode ...')
 
     labels = ['time', 'x', 'y', 'z', 'phi', 'theta', 'psi', 'x_velocity',
@@ -80,7 +80,7 @@ task = Task(init_pose = init_pose,
            target_pos=target_pos)
 agent = DDPG(task)
 
-results = run_episode(agent, task, file_output)
+results = run_test_episode(agent, task, file_output)
 plot_results(results, target_pos, 'Run without training')
 # import sys;sys.exit()
 # Train
@@ -95,6 +95,7 @@ for i_episode in range(1, num_episodes+1):
         
         agent.step(action, reward, next_state, done)
         state = next_state
+
         if done:
             history['i_episode'].append(i_episode)
             history['total_reward'].append(agent.total_reward)
@@ -104,8 +105,8 @@ for i_episode in range(1, num_episodes+1):
             break
     sys.stdout.flush()
 
-    if i_episode%50 == 0:
-        results = run_episode(agent, task, file_output)
+    if i_episode%num_episodes_to_plot == 0:
+        results = run_test_episode(agent, task, file_output)
         plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode))
 
 
@@ -118,7 +119,7 @@ print(task.sim.pose)
 print(task.sim.v)
 print(task.sim.angular_v)
     
-results = run_episode(agent, task, file_output)
+results = run_test_episode(agent, task, file_output)
 
 plot_results(results, target_pos, 'Run after training for {} episodes.'.format(num_episodes))
 

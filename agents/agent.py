@@ -45,13 +45,10 @@ class DDPG():
 
         # Algorithm parameters
         self.gamma = 0.99  # discount factor
-        self.tau = 0.01  # for soft update of target parameters
-        
-        # Mine 
-        self.score = 0
-        self.best_score = 0
-        
+        self.tau = 0.001  # for soft update of target parameters
+
         # Reward and score
+        self.score = 0
         self.total_reward = 0
         self.count = 0
 

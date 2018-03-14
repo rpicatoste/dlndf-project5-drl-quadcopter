@@ -1,10 +1,15 @@
-from keras import layers, models, optimizers
+from keras import layers, models, optimizers, regularizers
 from keras import backend as K
 
 class Actor:
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, action_low, action_high):
+    def __init__(self,
+                 state_size,
+                 action_size,
+                 action_low,
+                 action_high,
+                 learning_rate = 0.0001):
         """Initialize parameters and build model.
 
         Params
@@ -22,22 +27,22 @@ class Actor:
 
         # Initialize any other variables here
 
-        self.build_model()
+        self.build_model(learning_rate = learning_rate)
 
-    def build_model(self):
+    def build_model(self, learning_rate):
         """Build an actor (policy) network that maps states -> actions."""
         # Define input layer (states)
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(units=32, activation='relu')(states)
-        net = layers.Dense(units=64, activation='relu')(net)
-        net = layers.Dense(units=32, activation='relu')(net)
+        net = layers.Dense(units=32, activation='relu', kernel_regularizer=regularizers.l2(0.01))(states)
+        net = layers.Dense(units=64, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
+        net = layers.Dense(units=32, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
 
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
         # Add final output layer with sigmoid activation
-        raw_actions = layers.Dense(units=self.action_size, activation='sigmoid',
+        raw_actions = layers.Dense(units=self.action_size, activation='tanh', kernel_regularizer=regularizers.l2(0.01),
             name='raw_actions')(net)
 
         # Scale [0, 1] output for each action dimension to proper range
@@ -54,7 +59,7 @@ class Actor:
         # Incorporate any additional losses here (e.g. from regularizers)
 
         # Define optimizer and training function
-        optimizer = optimizers.Adam()
+        optimizer = optimizers.Adam(lr = learning_rate)
         updates_op = optimizer.get_updates(params=self.model.trainable_weights, loss=loss)
         self.train_fn = K.function(
             inputs=[self.model.input, action_gradients, K.learning_phase()],
