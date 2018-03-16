@@ -7,6 +7,10 @@ import numpy as np
 def plot_results(results, target_pos, title = '', rewards_lists = None, num = 0):
     # %matplotlib inline
 
+    if results['time'][-1] < 0.1:
+        print('Episode too short, skipping plot')
+        return
+
     fig = plt.figure(figsize=(12, 10))
 
     ax1 = fig.add_subplot(3, 2, 1)

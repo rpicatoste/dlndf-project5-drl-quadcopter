@@ -55,6 +55,12 @@ class PhysicsSim():
         self.lower_bounds = np.array([-env_bounds / 2, -env_bounds / 2, 0])
         self.upper_bounds = np.array([env_bounds / 2, env_bounds / 2, env_bounds])
 
+        ang_bounds = np.pi
+        # Limit theta, meaning that if the quadcopter gets upside-down, the sim can finish.
+        self.angular_lower_bounds = np.array([-np.inf, -ang_bounds, -np.inf])
+        self.angular_upper_bounds = np.array([np.inf, ang_bounds, np.inf])
+        self.reached_limits = False
+
         self.reset()
 
     def reset(self):
@@ -66,6 +72,7 @@ class PhysicsSim():
         self.angular_accels = np.array([0.0, 0.0, 0.0])
         self.prop_wind_speed = np.array([0., 0., 0., 0.])
         self.done = False
+        self.reached_limits = False
 
         # For debug, leave here.
         # print('\nSim reset to values: \n' +
@@ -150,12 +157,22 @@ class PhysicsSim():
         for ii in range(3):
             if position[ii] <= self.lower_bounds[ii]:
                 new_positions.append(self.lower_bounds[ii])
-                self.done = True
+                self.reached_limits = True
             elif position[ii] > self.upper_bounds[ii]:
                 new_positions.append(self.upper_bounds[ii])
-                self.done = True
+                self.reached_limits = True
             else:
                 new_positions.append(position[ii])
+
+        # Bound angles
+        for ii in range(3):
+            if angles[ii] <= self.angular_lower_bounds[ii]:
+                self.reached_limits = True
+            elif angles[ii] > self.angular_upper_bounds[ii]:
+                self.reached_limits = True
+
+        if self.reached_limits:
+            self.done = True
 
         self.pose = np.array(new_positions + list(angles))
         self.time += self.dt

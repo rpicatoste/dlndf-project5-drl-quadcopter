@@ -3,12 +3,13 @@ import numpy as np
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, mu, theta, sigma):
+    def __init__(self, size, mu, theta, sigma, limit = 900):
         """Initialize parameters and noise process."""
         self.mu = mu * np.ones(size)
         self.theta = theta
         self.sigma = sigma
         self.reset()
+        self.limit = limit
 
     def reset(self):
         """Reset the internal state (= noise) to mean (mu)."""
@@ -19,5 +20,6 @@ class OUNoise:
         x = self.state
         dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
         self.state = x + dx
+        self.state = np.clip(self.state, -self.limit, self.limit)
         return self.state
     

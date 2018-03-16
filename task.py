@@ -2,6 +2,8 @@ import numpy as np
 from physics_sim import PhysicsSim
 from collections import defaultdict
 
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
 
 class Task():
     """Task (environment) that defines the goal and provides feedback to the agent."""
@@ -37,21 +39,23 @@ class Task():
     def distance_reward(self):
         current_position = self.sim.pose[:3]
         target_position = self.target_pos
-
         #reward = -1.0 * (abs(current_position - target_position)).sum()
-        reward = -1.0 * np.linalg.norm(current_position - target_position)
-
-        if reward < -100.0:
-            reward = -100.0
+        # Since the norm is positive, tanh will give a value between 0 and 1.
+        reward = -2.0 * np.tanh(np.linalg.norm(current_position - target_position) * 0.10)
 
         return reward
 
     def angles_reward(self):
+        # Penalize only theta, which may make the quadrucopter roll upside-down.
+        # Since we do the abs, it is always positive, tanh will give a value between 0 and 1.
+        # reward = -1.0 * np.tanh(np.abs(self.sim.pose[4]) * 0.5)
+        reward = -1.0 * np.tanh(self.sim.pose[4]**2 * 0.5)
+        return reward
 
-        reward = -np.abs(self.sim.pose[3:6]).sum() * 18/np.pi
-        if reward < -100.0:
-            reward = -100.0
 
+    def angular_speed_reward(self):
+        # Penalizing angular speed will favor more stable motion.
+        reward = -0.1 * np.tanh(np.abs(self.sim.angular_v).sum() * 0.5)
         return reward
 
     def get_reward(self):
@@ -60,7 +64,7 @@ class Task():
         rewards['surviving'] = 1.0
         rewards['distance'] = self.distance_reward()
         rewards['angles'] = self.angles_reward()
-      #  reward += -np.abs(self.sim.angular_v).sum() * 90/np.pi
+        rewards['angular_speed'] = self.angles_reward()
 
         reward = sum([x for x in rewards.values()])
         return reward, rewards
@@ -78,6 +82,9 @@ class Task():
                 rewards[key] += value
             pose_all.append(self.sim.pose)
         next_state = np.concatenate(pose_all)
+        # if self.sim.reached_limits:
+        #     reward -= 50
+
         return next_state, reward, done, rewards
 
     def reset(self):
