@@ -41,7 +41,7 @@ class Task():
         target_position = self.target_pos
         #reward = -1.0 * (abs(current_position - target_position)).sum()
         # Since the norm is positive, tanh will give a value between 0 and 1.
-        reward = -2.0 * np.tanh(np.linalg.norm(current_position - target_position) * 0.10)
+        reward = -4.0 * np.tanh(np.linalg.norm(current_position - target_position) * 0.10)
 
         return reward
 

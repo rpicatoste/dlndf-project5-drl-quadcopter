@@ -102,14 +102,18 @@ class DDPG():
         # Roll over last state and action
         self.last_state = next_state
 
-    def act(self, states):
+    def act(self, states, trick = False):
         """Returns actions for given state(s) as per current policy."""
         state = np.reshape(states, [-1, self.state_size])
         action = self.actor_local.model.predict(state)[0]
+
+        if trick:
+            action = [405] * 4
         # print('  - act - states - ', states[:6])
         # print('  - act - action 1               - {:.2f}'.format(action[0]))
         noise = self.noise.sample()
         # print('  - act - list(action + noise) 1 - {:.2f}'.format(list(action + noise)[0]))
+
         return list(action + noise)  # add some noise for exploration
 
     def learn(self, experiences):

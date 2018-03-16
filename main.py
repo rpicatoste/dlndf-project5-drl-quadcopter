@@ -112,7 +112,7 @@ while i_episode < num_episodes+1:
     state = agent.reset_episode() # start a new episode
     t_episode = 0
     while True:
-        action = agent.act(state) 
+        action = agent.act(state, i_episode%1000)
         next_state, reward, done, _ = task.step(action)
         
         agent.step(action, reward, next_state, done)
