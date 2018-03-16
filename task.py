@@ -73,11 +73,14 @@ class Task():
     def get_reward(self, rotor_speeds):
         """Uses current pose of sim to return reward."""
         rewards = defaultdict(float)
-        rewards['surviving'] = 1.0 if self.sim.done == False else -10.0
-        rewards['distance'] = self.distance_reward()
-        rewards['angles'] = self.angles_reward()
-        rewards['angular_speed'] = self.angles_reward()
-        rewards['similar_rotors'] = self.similar_rotors_reward(rotor_speeds)
+
+        # rewards['surviving'] = 1.0 if self.sim.done == False else -10.0
+        # rewards['distance'] = self.distance_reward()
+        # rewards['angles'] = self.angles_reward()
+        # rewards['angular_speed'] = self.angles_reward()
+        # rewards['similar_rotors'] = self.similar_rotors_reward(rotor_speeds)
+
+        rewards['test'] = -sum([np.abs(x-405) for x in rotor_speeds])
 
         reward = sum([x for x in rewards.values()])
         return reward, rewards
