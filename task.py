@@ -80,7 +80,7 @@ class Task():
         # rewards['angular_speed'] = self.angles_reward()
         # rewards['similar_rotors'] = self.similar_rotors_reward(rotor_speeds)
 
-        rewards['test'] = -sum([np.abs(x-405) for x in rotor_speeds])
+        rewards['test'] = -sum([np.abs(x-505) for x in rotor_speeds])
 
         reward = sum([x for x in rewards.values()])
         return reward, rewards

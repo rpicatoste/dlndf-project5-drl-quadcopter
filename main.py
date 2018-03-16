@@ -64,14 +64,14 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
 
 #%% Parameters
 exploration_mu = 0
-exploration_theta = 0.15*2
-exploration_sigma = 0.2*2
+exploration_theta = 0.15*20*5
+exploration_sigma = 0.2*20
 buffer_size = 100000
 batch_size = 64
 gamma = 0.99
 tau = 0.001
-actor_learning_rate = 0.0001*0.010
-critic_learning_rate = 0.001*0.010
+actor_learning_rate = 0.0001*0.10
+critic_learning_rate = 0.001*0.10
 
 num_episodes = 1000 # 1000
 
@@ -111,18 +111,26 @@ stuck_counter = 0
 while i_episode < num_episodes+1:
     state = agent.reset_episode() # start a new episode
     t_episode = 0
+    time_step_episode = 0
+    cum_sum_actions = np.array([0.0]*4)
+
     while True:
-        action = agent.act(state, i_episode%1000)
+        action = agent.act(state, i_episode%1000 == 0)
         next_state, reward, done, _ = task.step(action)
-        
+
         agent.step(action, reward, next_state, done)
         state = next_state
+
+        cum_sum_actions += action
+        time_step_episode += 1
+
         t_episode += 0.06 # each step is 3 times 20 ms (50Hz)
         if done:
             if t_episode > 0.1 + i_episode*0.001:
 
                 i_episode += 1
 
+                # Slowly decrease noise if everything goes all right.
                 agent.noise.sigma *= 0.9975
                 agent.noise.theta *= 0.9975
 
@@ -140,27 +148,27 @@ while i_episode < num_episodes+1:
             else:
                 # do not count as episode if it didn't last a minimum.
                 # Slowly increase noise to try new values.
-                if agent.noise.sigma < 100 * exploration_sigma:
+                if agent.noise.sigma < exploration_sigma:
                     agent.noise.sigma *= 1.001
                     agent.noise.theta *= 1.001
                     agent.noise.state *= 0.99
 
                 stuck_counter += 1
-                if stuck_counter > 10000:
-                    i_episode += 1
+                if stuck_counter > 9999:
                     stuck_counter = 0
                     agent.noise.reset()
 
 
-            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:7.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f},{:6.1f},{:6.1f},{:6.1f})".
-                    format(i_episode,
-                           stuck_counter,
-                           agent.score,
-                           agent.total_reward,
-                           agent.noise.sigma,
-                           agent.noise.theta,
-                           *[rotor for rotor in agent.noise.state]
-                           ),
+            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:8.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f},{:6.1f},{:6.1f},{:6.1f})(action:{:6.1f},{:6.1f},{:6.1f},{:6.1f})".
+                  format(i_episode,
+                         stuck_counter,
+                         agent.score,
+                         agent.total_reward,
+                         agent.noise.sigma,
+                         agent.noise.theta,
+                         *[rotor for rotor in agent.noise.state],
+                         *[cum_sum_action/time_step_episode for cum_sum_action in cum_sum_actions]
+                         ),
                   end="")
 
             break

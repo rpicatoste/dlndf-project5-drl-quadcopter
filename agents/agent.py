@@ -108,6 +108,7 @@ class DDPG():
         action = self.actor_local.model.predict(state)[0]
 
         if trick:
+            print('trick: using known action')
             action = [405] * 4
         # print('  - act - states - ', states[:6])
         # print('  - act - action 1               - {:.2f}'.format(action[0]))
