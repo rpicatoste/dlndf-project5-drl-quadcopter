@@ -2,7 +2,15 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
+import os
 
+
+
+def verify_folder_for_file(file_path):
+
+    folder = os.path.dirname(file_path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
 
 def plot_results(results, target_pos, title = '', rewards_lists = None, num = 0):
     # %matplotlib inline
@@ -64,7 +72,11 @@ def plot_results(results, target_pos, title = '', rewards_lists = None, num = 0)
     plt.suptitle(title)
 
     try:
-        plt.savefig(r'figures\last_fig_plot_results' + str(num) + '.png')
+        figure_path = os.path.join(os.getcwd(),
+                                   'figures',
+                                   'last_fig_plot_results' + str(num) + '.png')
+        verify_folder_for_file(figure_path)
+        plt.savefig(figure_path)
     except:
         print('Image open or something, could not save.')
 
@@ -84,11 +96,34 @@ def plot_training_historic(history):
     ax1.grid()
 
     try:
-        plt.savefig(r'figures\results.png')
+        figure_path = os.path.join(os.getcwd(),
+                                   'figures',
+                                   'results_reward.png')
+        verify_folder_for_file(figure_path)
+        plt.savefig(figure_path)
     except:
         print('Image open or something, could not save.')
 
+    f, (ax1) = plt.subplots(1, 1, figsize=(12, 6))
 
+    N = 20
+    score = np.array(history['score'])
+    score = np.convolve(score, np.ones((N,)) / N, mode='valid')
+    score = np.concatenate([np.array([score[0]]*(N-1)), score])
+
+    ax1.plot(history['i_episode'], score, label='score')
+    ax1.set_ylim([min(score), max(score)])
+    ax1.legend()
+    ax1.grid()
+
+    try:
+        figure_path = os.path.join(os.getcwd(),
+                                   'figures',
+                                   'results_score.png')
+        verify_folder_for_file(figure_path)
+        plt.savefig(figure_path)
+    except:
+        print('Image open or something, could not save.')
     #
     # f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     #

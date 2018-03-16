@@ -1,7 +1,7 @@
 #%%
 import time
 import sys
-import random
+import os
 import csv
 import numpy as np
 from task import Task
@@ -64,14 +64,14 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
 
 #%% Parameters
 exploration_mu = 0
-exploration_theta = 0.15
-exploration_sigma = 0.2
+exploration_theta = 0.15*2
+exploration_sigma = 0.2*2
 buffer_size = 100000
 batch_size = 64
 gamma = 0.99
 tau = 0.001
-actor_learning_rate = 0.0001
-critic_learning_rate = 0.001
+actor_learning_rate = 0.0001*0.010
+critic_learning_rate = 0.001*0.010
 
 num_episodes = 1000 # 1000
 
@@ -123,8 +123,8 @@ while i_episode < num_episodes+1:
 
                 i_episode += 1
 
-                agent.noise.sigma *= 0.99
-                agent.noise.theta *= 0.99
+                agent.noise.sigma *= 0.9975
+                agent.noise.theta *= 0.9975
 
                 if len(history['i_episode'])>1:
                     history['i_episode'].append(history['i_episode'][-1] + 1)
@@ -133,14 +133,17 @@ while i_episode < num_episodes+1:
                 history['total_reward'].append(agent.total_reward)
                 history['score'].append(agent.score)
 
-                stuck_counter = 0
+                if stuck_counter > 1000:
+                    stuck_counter -= 1000
+                else:
+                    stuck_counter = 0
             else:
                 # do not count as episode if it didn't last a minimum.
                 # Slowly increase noise to try new values.
                 if agent.noise.sigma < 100 * exploration_sigma:
                     agent.noise.sigma *= 1.001
                     agent.noise.theta *= 1.001
-                    agent.noise.state *= 0.999
+                    agent.noise.state *= 0.99
 
                 stuck_counter += 1
                 if stuck_counter > 10000:
@@ -149,7 +152,7 @@ while i_episode < num_episodes+1:
                     agent.noise.reset()
 
 
-            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:7.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.2f},{:6.2f},{:6.2f},{:6.2f})".
+            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:7.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f},{:6.1f},{:6.1f},{:6.1f})".
                     format(i_episode,
                            stuck_counter,
                            agent.score,
@@ -163,7 +166,7 @@ while i_episode < num_episodes+1:
             break
     sys.stdout.flush()
 
-    if i_episode%num_episodes_to_plot == 0:
+    if i_episode%num_episodes_to_plot == 0 and stuck_counter == 0:
         results, rewards_lists = run_test_episode(agent, task, file_output)
         plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode), rewards_lists, i_episode)
     if (max_reward < reward) and (last_i_max_reward + 50 < i_episode):

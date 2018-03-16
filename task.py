@@ -58,13 +58,26 @@ class Task():
         reward = -0.1 * np.tanh(np.abs(self.sim.angular_v).sum() * 0.5)
         return reward
 
-    def get_reward(self):
+    def similar_rotors_reward(self, rotor_speeds):
+        # Penalize if rotor actions are too different.
+        reward = 0
+        avg_rotor = np.mean(rotor_speeds)
+        mean_diff = np.mean([np.abs(avg_rotor - rotor_speed) for rotor_speed in rotor_speeds])
+        minimum_considered = 0
+        if mean_diff > minimum_considered:
+
+            reward = -2.0*sigmoid((mean_diff-minimum_considered)*10/(900-minimum_considered)-5)
+
+        return reward
+
+    def get_reward(self, rotor_speeds):
         """Uses current pose of sim to return reward."""
         rewards = defaultdict(float)
-        rewards['surviving'] = 1.0
+        rewards['surviving'] = 1.0 if self.sim.done == False else -10.0
         rewards['distance'] = self.distance_reward()
         rewards['angles'] = self.angles_reward()
         rewards['angular_speed'] = self.angles_reward()
+        rewards['similar_rotors'] = self.similar_rotors_reward(rotor_speeds)
 
         reward = sum([x for x in rewards.values()])
         return reward, rewards
@@ -76,7 +89,7 @@ class Task():
         pose_all = []
         for _ in range(self.action_repeat):
             done = self.sim.next_timestep(rotor_speeds) # update the sim pose and velocities
-            instant_reward, new_rewards = self.get_reward()
+            instant_reward, new_rewards = self.get_reward(rotor_speeds)
             reward += instant_reward
             for key, value in new_rewards.items():
                 rewards[key] += value
