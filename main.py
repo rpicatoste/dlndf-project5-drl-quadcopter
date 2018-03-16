@@ -1,13 +1,14 @@
 #%%
 import time
 import sys
-import random
+import os
 import csv
 import numpy as np
 from task import Task
 from agents.agent import DDPG
 from plot_functions import plot_results, plot_training_historic
 from collections import defaultdict
+import copy
 
 import matplotlib.pyplot as plt
 from agents.ou_noise import OUNoise
@@ -26,6 +27,7 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
               'psi_velocity', 'rotor_speed1', 'rotor_speed2', 'rotor_speed3', 'rotor_speed4','reward']
     results = {x : [] for x in labels}
 
+    aux_noise = copy.copy(agent.noise)
     agent.noise = OUNoise(agent.action_size, 0.0, 0.0, 0.0)
     
     state = agent.reset_episode() # start a new episode
@@ -40,6 +42,7 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
         while True:
             rotor_speeds = agent.act(state)
             #rotor_speeds = [405]*4
+            #rotor_speeds = [800, 10, 10, 10]
             next_state, reward, done, new_rewards = task.step(rotor_speeds)
             for key, value in new_rewards.items():
                 rewards_lists[key].append(value)
@@ -54,24 +57,21 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
                 break
 
      # Restore noise
-    agent.noise = OUNoise(agent.action_size, 
-                         agent.exploration_mu, 
-                         agent.exploration_theta, 
-                         agent.exploration_sigma)
+    agent.noise = copy.copy(aux_noise)
 
     print('Finished test episode!\n')
     return results, rewards_lists
 
 #%% Parameters
 exploration_mu = 0
-exploration_theta = 0.15
-exploration_sigma = 0.2
+exploration_theta = 0.15*2
+exploration_sigma = 0.2*2
 buffer_size = 100000
 batch_size = 64
 gamma = 0.99
 tau = 0.001
-actor_learning_rate = 0.0001
-critic_learning_rate = 0.001
+actor_learning_rate = 0.0001*0.010
+critic_learning_rate = 0.001*0.010
 
 num_episodes = 1000 # 1000
 
@@ -79,7 +79,7 @@ num_episodes = 1000 # 1000
 print('\n\nStart training...')
 num_episodes_to_plot = max(100, num_episodes/5)
 target_pos      = np.array([ 0.0, 0.0, 10.0])
-init_pose       = np.array([ 0.0, 0.0, 10.0, 0.0, 0.0, 0.0])
+init_pose       = np.array([ 0.0, 0.0, 5.0, 0.0, 0.0, 0.0])
 init_velocities = np.array([ 0.0, 0.0,  0.0])
 task = Task(init_pose = init_pose,
            init_velocities = init_velocities,
@@ -102,39 +102,78 @@ plot_results(results, target_pos, 'Run without training', rewards_lists)
 #plt.show();import sys;sys.exit()
 # Train
 max_reward = -np.inf
-last_max_reward = 2*num_episodes_to_plot
+last_i_max_reward = 300
 history = {'total_reward' : [], 'score' : [], 'i_episode' : []}
 start = time.time()
 done = False
-for i_episode in range(1, num_episodes+1):
+i_episode = 1
+stuck_counter = 0
+while i_episode < num_episodes+1:
     state = agent.reset_episode() # start a new episode
+    t_episode = 0
     while True:
-        action = agent.act(state) 
+        action = agent.act(state, i_episode%1000)
         next_state, reward, done, _ = task.step(action)
         
         agent.step(action, reward, next_state, done)
         state = next_state
-
+        t_episode += 0.06 # each step is 3 times 20 ms (50Hz)
         if done:
-            if len(history['i_episode'])>1:
-                history['i_episode'].append(history['i_episode'][-1] + 1)
+            if t_episode > 0.1 + i_episode*0.001:
+
+                i_episode += 1
+
+                agent.noise.sigma *= 0.9975
+                agent.noise.theta *= 0.9975
+
+                if len(history['i_episode'])>1:
+                    history['i_episode'].append(history['i_episode'][-1] + 1)
+                else:
+                    history['i_episode'].append(1)
+                history['total_reward'].append(agent.total_reward)
+                history['score'].append(agent.score)
+
+                if stuck_counter > 1000:
+                    stuck_counter -= 1000
+                else:
+                    stuck_counter = 0
             else:
-                history['i_episode'].append(1)
-            history['total_reward'].append(agent.total_reward)
-            history['score'].append(agent.score)
-            print("\rEpisode = {: 4d}, score = {:7.3f}, total_reward = {:7.3f}".format(
-                i_episode, agent.score, agent.total_reward), end="")
+                # do not count as episode if it didn't last a minimum.
+                # Slowly increase noise to try new values.
+                if agent.noise.sigma < 100 * exploration_sigma:
+                    agent.noise.sigma *= 1.001
+                    agent.noise.theta *= 1.001
+                    agent.noise.state *= 0.99
+
+                stuck_counter += 1
+                if stuck_counter > 10000:
+                    i_episode += 1
+                    stuck_counter = 0
+                    agent.noise.reset()
+
+
+            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:7.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f},{:6.1f},{:6.1f},{:6.1f})".
+                    format(i_episode,
+                           stuck_counter,
+                           agent.score,
+                           agent.total_reward,
+                           agent.noise.sigma,
+                           agent.noise.theta,
+                           *[rotor for rotor in agent.noise.state]
+                           ),
+                  end="")
+
             break
     sys.stdout.flush()
 
-    if i_episode%num_episodes_to_plot == 0:
+    if i_episode%num_episodes_to_plot == 0 and stuck_counter == 0:
         results, rewards_lists = run_test_episode(agent, task, file_output)
         plot_results(results, target_pos, 'Run after training for {} episodes.'.format(i_episode), rewards_lists, i_episode)
-    if (max_reward < reward) and (last_max_reward + 50 < i_episode):
+    if (max_reward < reward) and (last_i_max_reward + 50 < i_episode):
         results, rewards_lists = run_test_episode(agent, task, file_output)
         plot_results(results, target_pos, 'New max at: {} episodes.'.format(i_episode), rewards_lists, i_episode)
         max_reward = reward
-        last_max_reward = i_episode
+        last_i_max_reward = i_episode
 
 print('\nTime training: {:.1f} seconds\n'.format(time.time() - start))
 
