@@ -63,13 +63,13 @@ def run_test_episode(agent : DDPG, task : Task, file_output):
     return results, rewards_lists
 
 #%% Parameters
-exploration_mu = 0
-exploration_theta = 0.15*20*5
-exploration_sigma = 0.2*20
+exploration_mu = 405
+exploration_theta = 0.15*3
+exploration_sigma = 0.2*5
 buffer_size = 100000
 batch_size = 64
 gamma = 0.99
-tau = 0.001
+tau = 0.01 # 0.001
 actor_learning_rate = 0.0001*0.10
 critic_learning_rate = 0.001*0.10
 
