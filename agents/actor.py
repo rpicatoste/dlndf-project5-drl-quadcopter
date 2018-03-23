@@ -35,19 +35,26 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(units=32, activation='relu', kernel_regularizer=regularizers.l2(0.01))(states)
-        net = layers.Dense(units=64, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
-        net = layers.Dense(units=32, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
+        net = layers.Dense(units=8, activation='relu', kernel_regularizer=regularizers.l2(0.01))(states)
+        # net = layers.BatchNormalization()(net)
+        net = layers.Dense(units=8, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
+        # net = layers.BatchNormalization()(net)
 
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
         # Add final output layer with sigmoid activation
-        raw_actions = layers.Dense(units=self.action_size, activation='sigmoid', kernel_regularizer=regularizers.l2(0.01),
-            name='raw_actions')(net)
+        raw_actions = layers.Dense(
+            units = self.action_size,
+            activation = 'sigmoid',
+            kernel_regularizer = regularizers.l2(0.01),
+            name = 'raw_actions'
+        )(net)
 
         # Scale [0, 1] output for each action dimension to proper range
-        actions = layers.Lambda(lambda x: (x * self.action_range) + self.action_low,
-                                name='actions')(raw_actions)
+        actions = layers.Lambda(
+            lambda x: (x * self.action_range) + self.action_low,
+            name='actions'
+        )(raw_actions)
 
         # Create Keras model
         self.model = models.Model(inputs=states, outputs=actions)

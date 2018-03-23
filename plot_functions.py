@@ -5,6 +5,33 @@ import numpy as np
 import os
 
 
+def save_figure(plt, file_name, params):
+    folder_name = 'mu_{:1.3f}__theta_{:1.3f}__sigma_{:1.3f}__actorlr_{:1.1e}__criticlr_{:1.1e}__tau_{:1.4f}'.format(
+        params.exploration_mu,
+        params.exploration_theta,
+        params.exploration_sigma,
+        params.actor_learning_rate,
+        params.critic_learning_rate,
+        params.tau
+    )
+
+    try:
+        extra_text = params.extra_text
+    except:
+        extra_text = ''
+
+    folder_name += '__' + extra_text
+
+    try:
+        figure_path = os.path.join(os.getcwd(),
+                                   'figures',
+                                   folder_name,
+                                   file_name)
+        verify_folder_for_file(figure_path)
+        plt.savefig(figure_path)
+    except:
+        print('Image open or something, could not save.')
+
 
 def verify_folder_for_file(file_path):
 
@@ -12,7 +39,8 @@ def verify_folder_for_file(file_path):
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-def plot_results(results, target_pos, title = '', rewards_lists = None, num = 0):
+
+def plot_results(results, target_pos, title, rewards_lists, num, params):
     # %matplotlib inline
 
     if results['time'][-1] < 0.1:
@@ -67,21 +95,12 @@ def plot_results(results, target_pos, title = '', rewards_lists = None, num = 0)
     ax6.set_ylabel('Y axis')
     ax6.set_zlabel('Z axis')
 
-
-
     plt.suptitle(title)
 
-    try:
-        figure_path = os.path.join(os.getcwd(),
-                                   'figures',
-                                   'last_fig_plot_results' + str(num) + '.png')
-        verify_folder_for_file(figure_path)
-        plt.savefig(figure_path)
-    except:
-        print('Image open or something, could not save.')
+    save_figure(plt, 'last_fig_plot_results' + str(num) + '.png', params)
 
 
-def plot_training_historic(history):
+def plot_training_historic(history, params):
 
     f, (ax1) = plt.subplots(1, 1, figsize=(12, 6))
 
@@ -95,14 +114,7 @@ def plot_training_historic(history):
     ax1.legend()
     ax1.grid()
 
-    try:
-        figure_path = os.path.join(os.getcwd(),
-                                   'figures',
-                                   'results_reward.png')
-        verify_folder_for_file(figure_path)
-        plt.savefig(figure_path)
-    except:
-        print('Image open or something, could not save.')
+    save_figure(plt, 'results_reward.png', params)
 
     f, (ax1) = plt.subplots(1, 1, figsize=(12, 6))
 
@@ -116,14 +128,8 @@ def plot_training_historic(history):
     ax1.legend()
     ax1.grid()
 
-    try:
-        figure_path = os.path.join(os.getcwd(),
-                                   'figures',
-                                   'results_score.png')
-        verify_folder_for_file(figure_path)
-        plt.savefig(figure_path)
-    except:
-        print('Image open or something, could not save.')
+    save_figure(plt, 'results_score.png', params)
+
     #
     # f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     #

@@ -24,13 +24,14 @@ class Task():
         """
         # Simulation
         self.sim = PhysicsSim(init_pose, init_velocities, init_angle_velocities, runtime) 
-        self.action_repeat = 3
+        self.action_repeat = 1
 
-        self.state_size = self.action_repeat * 6
+
+        self.state_size = 3     # State size affected
 
         self.action_low = 50
         self.action_high = 900
-        self.action_size = 4
+        self.action_size = 1
 
         # Goal
         self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
@@ -39,10 +40,15 @@ class Task():
     def distance_reward(self):
         current_position = self.sim.pose[:3]
         target_position = self.target_pos
-        #reward = -1.0 * (abs(current_position - target_position)).sum()
+        # reward = -2.0 * (abs(current_position - target_position)).sum()
         # Since the norm is positive, tanh will give a value between 0 and 1.
-        reward = -4.0 * np.tanh(np.linalg.norm(current_position - target_position) * 0.10)
+        reward = 4.0 * (1.0 - np.tanh(np.linalg.norm(current_position - target_position) * 0.10))
 
+        return reward
+
+    def speed_reward(self):
+        # Penalizing speed will favor more stable motion.
+        reward = 1.0 - 1.0 * np.tanh(np.abs(self.sim.v).sum() * 1.0)
         return reward
 
     def angles_reward(self):
@@ -51,7 +57,6 @@ class Task():
         # reward = -1.0 * np.tanh(np.abs(self.sim.pose[4]) * 0.5)
         reward = -1.0 * np.tanh(self.sim.pose[4]**2 * 0.5)
         return reward
-
 
     def angular_speed_reward(self):
         # Penalizing angular speed will favor more stable motion.
@@ -74,13 +79,21 @@ class Task():
         """Uses current pose of sim to return reward."""
         rewards = defaultdict(float)
 
-        # rewards['surviving'] = 1.0 if self.sim.done == False else -10.0
-        # rewards['distance'] = self.distance_reward()
+        if self.sim.done:
+            if self.sim.reached_limits:
+                rewards['surviving'] = -1.0
+            else:
+                rewards['surviving'] = 1.0
+        else:
+            rewards['surviving'] = 0.1
+
+        rewards['distance'] = self.distance_reward()
+        rewards['speed'] = self.speed_reward()
         # rewards['angles'] = self.angles_reward()
-        # rewards['angular_speed'] = self.angles_reward()
+        # rewards['angular_speed'] = self.angular_speed_reward()
         # rewards['similar_rotors'] = self.similar_rotors_reward(rotor_speeds)
 
-        rewards['test'] = -sum([np.abs(x-505) for x in rotor_speeds])
+        # rewards['test'] = -sum([np.abs(x-505) for x in rotor_speeds])
 
         reward = sum([x for x in rewards.values()])
         return reward, rewards
@@ -98,6 +111,7 @@ class Task():
                 rewards[key] += value
             pose_all.append(self.sim.pose)
         next_state = np.concatenate(pose_all)
+        next_state = np.array([next_state[2], self.sim.v[2], self.target_pos[2]])   # State size affected
         # if self.sim.reached_limits:
         #     reward -= 50
 
@@ -106,5 +120,7 @@ class Task():
     def reset(self):
         """Reset the sim to start a new episode."""
         self.sim.reset()
-        state = np.concatenate([self.sim.pose] * self.action_repeat) 
+        state = np.concatenate([self.sim.pose] * self.action_repeat)
+        state = np.array([state[2], self.sim.v[2], self.target_pos[2]])   # State size affected
+
         return state
