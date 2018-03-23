@@ -71,9 +71,11 @@ params.extra_text = 'with_surviving_reward__batch_norm'
 params.exploration_mu = 0
 params.exploration_theta = 0.15
 params.exploration_sigma = 0.05
-params.actor_learning_rate = 1.0e-6 # 0.0001
+params.actor_learning_rate = 1.0e-5 # 0.0001
 params.critic_learning_rate = 0.001  # 0.001
 params.tau = 0.001 # 0.001
+params.actor_net_cells = [16, 16]
+params.critic_net_cells = [16, 32]
 
 gamma = 0.99
 buffer_size = 100000
@@ -99,7 +101,9 @@ agent = DDPG(task,
              gamma = gamma,
              tau = params.tau,
              actor_learning_rate = params.actor_learning_rate,
-             critic_learning_rate = params.critic_learning_rate
+             critic_learning_rate = params.critic_learning_rate,
+             actor_net_cells = params.actor_net_cells,
+             critic_net_cells = params.critic_net_cells
              )
 
 results, rewards_lists = run_test_episode(agent, task, file_output)
@@ -121,6 +125,7 @@ while i_episode < num_episodes+1:
     time_step_episode = 0
     cum_sum_actions = np.array([0.0]*4)
 
+    start = time.time()
     while True:
         action = agent.act(state, (i_episode-1)%100 == 0)
         actions = np.array(action*4)
@@ -153,6 +158,9 @@ while i_episode < num_episodes+1:
 
         t_episode += 0.06 # each step is 3 times 20 ms (50Hz)
         if done:
+
+            episode_time = time.time() - start
+            start = time.time()
             i_episode += 1
 
             # Slowly decrease noise if everything goes all right.
@@ -167,7 +175,7 @@ while i_episode < num_episodes+1:
             history['score'].append(agent.score)
 
 
-            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:8.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f})(action:{:6.1f})".
+            print("\rEpisode:{: 4d} (stuck:{: 5d}), score: {:7.1f}, reward: {:8.2f}, noise(sigma: {:6.3f}, theta: {:6.3f}, state, {:6.1f})(action:{:6.1f}). Time: {:3.0f} s.".
                   format(i_episode,
                          stuck_counter,
                          agent.score,
@@ -175,7 +183,8 @@ while i_episode < num_episodes+1:
                          agent.noise.sigma,
                          agent.noise.theta,
                          *[rotor for rotor in agent.noise.state],
-                         *[cum_sum_action/time_step_episode for cum_sum_action in cum_sum_actions]
+                         *[cum_sum_action/time_step_episode for cum_sum_action in cum_sum_actions],
+                         episode_time
                          ),
                   end="")
 

@@ -9,6 +9,7 @@ class Actor:
                  action_size,
                  action_low,
                  action_high,
+                 net_cells_list,
                  learning_rate = 0.0001):
         """Initialize parameters and build model.
 
@@ -27,18 +28,32 @@ class Actor:
 
         # Initialize any other variables here
 
-        self.build_model(learning_rate = learning_rate)
+        self.build_model(learning_rate = learning_rate, net_cells_list = net_cells_list)
 
-    def build_model(self, learning_rate):
+    def build_model(self, learning_rate, net_cells_list):
         """Build an actor (policy) network that maps states -> actions."""
         # Define input layer (states)
         states = layers.Input(shape=(self.state_size,), name='states')
+        net = states
 
         # Add hidden layers
-        net = layers.Dense(units=8, activation='relu', kernel_regularizer=regularizers.l2(0.01))(states)
-        # net = layers.BatchNormalization()(net)
-        net = layers.Dense(units=8, activation='relu', kernel_regularizer=regularizers.l2(0.01))(net)
-        # net = layers.BatchNormalization()(net)
+        ii = 0
+        net = layers.Dense(units = net_cells_list[ii],
+                           activation='relu',
+                           kernel_regularizer=regularizers.l2(0.01),
+                           name = 'net_actor' + str(ii)
+                           )(net)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dropout(0.5)(net)
+
+        ii = 1
+        net = layers.Dense(units = net_cells_list[ii],
+                           activation='relu',
+                           kernel_regularizer=regularizers.l2(0.01),
+                           name = 'net_actor' + str(ii)
+                           )(net)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dropout(0.5)(net)
 
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 

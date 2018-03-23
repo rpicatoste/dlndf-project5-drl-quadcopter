@@ -6,13 +6,22 @@ import os
 
 
 def save_figure(plt, file_name, params):
-    folder_name = 'mu_{:1.3f}__theta_{:1.3f}__sigma_{:1.3f}__actorlr_{:1.1e}__criticlr_{:1.1e}__tau_{:1.4f}'.format(
+    txt_nets = '__actor_net'
+    for num in params.actor_net_cells:
+        txt_nets += '_{}'.format(num)
+
+    txt_nets += '__critic_net'
+    for num in params.critic_net_cells:
+        txt_nets += '_{}'.format(num)
+
+    folder_name = 'mu_{:1.3f}__theta_{:1.3f}__sigma_{:1.3f}__actorlr_{:1.1e}__criticlr_{:1.1e}__tau_{:1.4f}{}'.format(
         params.exploration_mu,
         params.exploration_theta,
         params.exploration_sigma,
         params.actor_learning_rate,
         params.critic_learning_rate,
-        params.tau
+        params.tau,
+        txt_nets
     )
 
     try:

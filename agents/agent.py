@@ -19,7 +19,9 @@ class DDPG():
                  gamma = 0.99,
                  tau = 0.001,
                  actor_learning_rate = 0.0001,
-                 critic_learning_rate = 0.001
+                 critic_learning_rate = 0.001,
+                 actor_net_cells = [16, 16],
+                 critic_net_cells = [16, 32]
     ):
         self.task = task
         self.state_size = task.state_size
@@ -32,16 +34,24 @@ class DDPG():
                                  self.action_size,
                                  self.action_low,
                                  self.action_high,
+                                 net_cells_list = actor_net_cells,
                                  learning_rate = actor_learning_rate)
         self.actor_target = Actor(self.state_size,
                                   self.action_size,
                                   self.action_low,
                                   self.action_high,
-                                 learning_rate = actor_learning_rate)
+                                  net_cells_list = actor_net_cells,
+                                  learning_rate = actor_learning_rate)
 
         # Critic (Value) Model
-        self.critic_local = Critic(self.state_size, self.action_size, learning_rate = critic_learning_rate)
-        self.critic_target = Critic(self.state_size, self.action_size, learning_rate = critic_learning_rate)
+        self.critic_local = Critic(self.state_size,
+                                   self.action_size,
+                                   net_cells = critic_net_cells,
+                                   learning_rate = critic_learning_rate)
+        self.critic_target = Critic(self.state_size,
+                                    self.action_size,
+                                    net_cells = critic_net_cells,
+                                    learning_rate = critic_learning_rate)
 
         # Initialize target model parameters with local model parameters
         self.critic_target.model.set_weights(self.critic_local.model.get_weights())
