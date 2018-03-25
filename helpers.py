@@ -142,7 +142,7 @@ def run_training(agent, task, params, num_episodes, file_output):
             cum_sum_actions += action
             time_step_episode += 1
 
-            if i_episode % 10 == 0:
+            if i_episode % 20 == 0:
                 print(
                     "  Ep:{: 4d}. Step:{: 4d}, reward: {:5.1f}, noise(sigma: {:6.4f},"
                     " theta: {:5.3f}, state, {:5.1f})(action:{:6.1f}), "

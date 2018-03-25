@@ -49,9 +49,11 @@ class Task():
         # Penalizing speed will favor more stable motion.
         reward = 1.0 - 1.0 * np.tanh(np.abs(self.sim.v).sum() * 1.0)
 
+        # But only when we are close to the target position. To avoid encouraging the quadcopter to stop in other random places.
         current_position = self.sim.pose[:3]
         target_position = self.target_pos
         distance = np.linalg.norm(current_position - target_position)
+        # The multiplier is 1 when the distance is 0, and decrease to 0 when we move from there.
         multiplier = np.exp(-distance** 2)
 
         return reward * multiplier

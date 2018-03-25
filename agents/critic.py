@@ -63,7 +63,8 @@ class Critic:
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
         # Combine state and action pathways
-        net = layers.Concatenate()([net_states, net_actions])
+        # net = layers.Concatenate()([net_states, net_actions])
+        net = layers.Add()([net_states, net_actions])
         net = layers.Dense(units = net_cells_list[-1],
                            activation='relu',
                            kernel_initializer = initializers.RandomNormal(),

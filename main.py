@@ -36,7 +36,7 @@ params.gamma = 0.99
 buffer_size = 100000
 batch_size = 64
 
-num_episodes = 1000 # 1000
+num_episodes = 100 # 1000
 
 print('\n\nStart training...')
 target_pos      = np.array([ 0.0, 0.0, 10.0])

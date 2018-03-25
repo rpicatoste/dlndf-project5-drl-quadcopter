@@ -37,8 +37,8 @@ params.gamma = 0.99
 # test_values = [0.2, 0.02, 0.002, 0.0002] # exploration_sigma
 # test_values = [0.1, 0.01, 0.001, 0.0001] # tau
 # test_values = [0.9, 0.99] # gammaç
-test_values = ['speed_reward_multip__concatenate']
-# test_values = ['speed_reward_multip__add']
+# test_values = ['speed_reward_multip__concatenate']
+test_values = ['speed_reward_multip__add']
 # Think how to do the networks batch.
 
 for test_value in test_values:
