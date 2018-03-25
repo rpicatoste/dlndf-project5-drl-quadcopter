@@ -26,21 +26,21 @@ params.exploration_theta = 0.15
 params.exploration_sigma = 0.02 #0.002
 params.actor_learning_rate = 1.0e-5 # 0.0001
 params.critic_learning_rate = 0.001  # 0.001
-params.tau = 0.01
+params.tau = 0.001
 params.actor_net_cells = [32, 32]
 params.critic_net_cells = [32, 64]
 params.gamma = 0.99
 
 # test_values = [1.0e-3, 1.0e-4, 1.0e-5,1.0e-6, 1.0e-7] # actor_learning_rate
-test_values = [1.0e-2, 1.0e-3, 1.0e-4,1.0e-5] # critic_learning_rate
+# test_values = [1.0e-2, 1.0e-3, 1.0e-4,1.0e-5] # critic_learning_rate
 # test_values = [0.9, 0.99] # gamma
-# test_values = [0.2, 0.02, 0.002, 0.0002] # exploration_sigma
+test_values = [0.2, 0.02, 0.002, 0.0002] # exploration_sigma
 # test_values = [0.1, 0.01, 0.001, 0.0001] # tau
 # test_values = [0.9, 0.99] # gamma
 # Think how to do the networks batch.
 
 for test_value in test_values:
-    params.critic_learning_rate = test_value
+    params.exploration_sigma = test_value
 
     task = Task(init_pose = init_pose,
                 init_velocities = init_velocities,
