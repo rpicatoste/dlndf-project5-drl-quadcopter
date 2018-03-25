@@ -1,4 +1,4 @@
-from keras import layers, models, optimizers, regularizers
+from keras import layers, models, optimizers, regularizers, initializers
 from keras import backend as K
 
 class Actor:
@@ -41,6 +41,7 @@ class Actor:
         net = layers.Dense(units = net_cells_list[ii],
                            activation='relu',
                            kernel_regularizer=regularizers.l2(0.01),
+                           kernel_initializer = initializers.RandomNormal(),
                            name = 'net_actor' + str(ii)
                            )(net)
         net = layers.BatchNormalization()(net)
@@ -50,6 +51,7 @@ class Actor:
         net = layers.Dense(units = net_cells_list[ii],
                            activation='relu',
                            kernel_regularizer=regularizers.l2(0.01),
+                           kernel_initializer = initializers.RandomNormal(),
                            name = 'net_actor' + str(ii)
                            )(net)
         net = layers.BatchNormalization()(net)
@@ -62,6 +64,7 @@ class Actor:
             units = self.action_size,
             activation = 'sigmoid',
             kernel_regularizer = regularizers.l2(0.01),
+            kernel_initializer = initializers.RandomNormal(),
             name = 'raw_actions'
         )(net)
 
@@ -87,5 +90,5 @@ class Actor:
             inputs=[self.model.input, action_gradients, K.learning_phase()],
             outputs=[],
             updates=updates_op)
-        
-        
+
+

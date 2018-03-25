@@ -26,7 +26,6 @@ class Task():
         self.sim = PhysicsSim(init_pose, init_velocities, init_angle_velocities, runtime) 
         self.action_repeat = 1
 
-
         self.state_size = 3     # State size affected
 
         self.action_low = 50
@@ -49,7 +48,13 @@ class Task():
     def speed_reward(self):
         # Penalizing speed will favor more stable motion.
         reward = 1.0 - 1.0 * np.tanh(np.abs(self.sim.v).sum() * 1.0)
-        return reward
+
+        current_position = self.sim.pose[:3]
+        target_position = self.target_pos
+        distance = np.linalg.norm(current_position - target_position)
+        multiplier = np.exp(-distance** 2)
+
+        return reward * multiplier
 
     def angles_reward(self):
         # Penalize only theta, which may make the quadrucopter roll upside-down.

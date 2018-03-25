@@ -6,30 +6,8 @@ import os
 
 
 def save_figure(plt, file_name, params):
-    txt_nets = '__actor_net'
-    for num in params.actor_net_cells:
-        txt_nets += '_{}'.format(num)
 
-    txt_nets += '__critic_net'
-    for num in params.critic_net_cells:
-        txt_nets += '_{}'.format(num)
-
-    folder_name = 'mu_{:1.3f}__theta_{:1.3f}__sigma_{:1.3f}__actorlr_{:1.1e}__criticlr_{:1.1e}__tau_{:1.4f}{}'.format(
-        params.exploration_mu,
-        params.exploration_theta,
-        params.exploration_sigma,
-        params.actor_learning_rate,
-        params.critic_learning_rate,
-        params.tau,
-        txt_nets
-    )
-
-    try:
-        extra_text = params.extra_text
-    except:
-        extra_text = ''
-
-    folder_name += '__' + extra_text
+    folder_name = str(params)
 
     try:
         figure_path = os.path.join(os.getcwd(),
@@ -104,6 +82,7 @@ def plot_results(results, target_pos, title, rewards_lists, num, params):
     ax6.set_ylabel('Y axis')
     ax6.set_zlabel('Z axis')
 
+    fig.suptitle(str(params))
     plt.suptitle(title)
 
     save_figure(plt, 'last_fig_plot_results' + str(num) + '.png', params)
@@ -125,7 +104,7 @@ def plot_training_historic(history, params):
 
     save_figure(plt, 'results_reward.png', params)
 
-    f, (ax1) = plt.subplots(1, 1, figsize=(12, 6))
+    fig, (ax1) = plt.subplots(1, 1, figsize=(12, 6))
 
     N = 20
     score = np.array(history['score'])
@@ -137,31 +116,6 @@ def plot_training_historic(history, params):
     ax1.legend()
     ax1.grid()
 
-    save_figure(plt, 'results_score.png', params)
+    fig.suptitle(str(params))
 
-    #
-    # f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-    #
-    # N = 20
-    # total_reward = np.array(history['total_reward'])
-    # total_reward = np.convolve(total_reward, np.ones((N,)) / N, mode='valid')
-    # total_reward = np.concatenate([np.array([total_reward[0]]*(N-1)), total_reward])
-    #
-    # score = np.array(history['score'])
-    # score = np.convolve(score, np.ones((N,)) / N, mode='valid')
-    # score = np.concatenate([np.array([score[0]]*(N-1)), score])
-    #
-    # ax1.plot(history['i_episode'], history['total_reward'], label='total_reward')
-    # ax1.plot(history['i_episode'], total_reward, label='total_reward_filt')
-    # ax1.set_ylim([min(total_reward), max(total_reward)])
-    # ax1.legend()
-    #
-    # ax2.plot(history['i_episode'], history['score'], label='score')
-    # ax2.plot(history['i_episode'], score, label='score_filt')
-    # ax2.set_ylim([min(score), max(score)])
-    # ax2.legend()
-    #
-    # try:
-    #     plt.savefig(r'figures\results.png')
-    # except:
-    #     print('Image open or something, could not save.')
+    save_figure(plt, 'results_score.png', params)

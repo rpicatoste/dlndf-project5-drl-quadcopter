@@ -36,6 +36,7 @@ class PhysicsSim():
         self.init_angle_velocities = np.array([0.0, 0.0, 0.0]) if init_angle_velocities is None else init_angle_velocities
         self.runtime = runtime
 
+        # Constants
         self.gravity = -9.81  # m/s
         self.rho = 1.2
         self.mass = 0.958  # 300 g
@@ -59,7 +60,6 @@ class PhysicsSim():
         # Limit theta, meaning that if the quadcopter gets upside-down, the sim can finish.
         self.angular_lower_bounds = np.array([-np.inf, -np.inf, -np.inf])
         self.angular_upper_bounds = np.array([np.inf, np.inf, np.inf])
-        self.reached_limits = False
 
         self.reset()
 
@@ -79,7 +79,10 @@ class PhysicsSim():
         #         '  - self.pose: {}\n'.format(self.pose) +
         #         '  - v: {}\n'.format(self.v) +
         #         '  - init_velocities: {}\n'.format(self.init_velocities) +
-        #         '  - angular_v: {}\n'.format(self.angular_v))
+        #         '  - angular_v: {}\n'.format(self.angular_v) +
+        #         '  - prop_wind_speed: {}\n'.format(self.prop_wind_speed) +
+        #         '  - linear_accel: {}\n'.format(self.linear_accel)
+        #       )
 
     def find_body_velocity(self):
         body_velocity = np.matmul(earth_to_body_frame(*list(self.pose[3:])), self.v)
@@ -100,6 +103,10 @@ class PhysicsSim():
 
         linear_forces = np.matmul(body_to_earth_frame(*list(self.pose[3:])), body_forces)
         linear_forces += gravity_force
+
+        if self.pose[2] < 0.001 and linear_forces[2] < 0.0:
+            linear_forces[2] = 0.0
+
         return linear_forces
 
     def get_moments(self, thrusts):
@@ -144,6 +151,7 @@ class PhysicsSim():
         self.linear_accel = self.get_linear_forces(thrusts) / self.mass
 
         position = self.pose[:3] + self.v * self.dt + 0.5 * self.linear_accel * self.dt**2
+
         self.v += self.linear_accel * self.dt
 
         moments = self.get_moments(thrusts)

@@ -11,17 +11,9 @@ class DDPG():
     """Reinforcement Learning agent that learns using DDPG."""
     def __init__(self,
                  task : Task,
-                 exploration_mu = 0,
-                 exploration_theta = 0.15,
-                 exploration_sigma = 0.2,
+                 params,
                  buffer_size = 100000,
-                 batch_size = 64,
-                 gamma = 0.99,
-                 tau = 0.001,
-                 actor_learning_rate = 0.0001,
-                 critic_learning_rate = 0.001,
-                 actor_net_cells = [16, 16],
-                 critic_net_cells = [16, 32]
+                 batch_size = 64
     ):
         self.task = task
         self.state_size = task.state_size
@@ -34,36 +26,36 @@ class DDPG():
                                  self.action_size,
                                  self.action_low,
                                  self.action_high,
-                                 net_cells_list = actor_net_cells,
-                                 learning_rate = actor_learning_rate)
+                                 net_cells_list = params.actor_net_cells,
+                                 learning_rate = params.actor_learning_rate)
         self.actor_target = Actor(self.state_size,
                                   self.action_size,
                                   self.action_low,
                                   self.action_high,
-                                  net_cells_list = actor_net_cells,
-                                  learning_rate = actor_learning_rate)
+                                  net_cells_list = params.actor_net_cells,
+                                  learning_rate = params.actor_learning_rate)
 
         # Critic (Value) Model
         self.critic_local = Critic(self.state_size,
                                    self.action_size,
-                                   net_cells = critic_net_cells,
-                                   learning_rate = critic_learning_rate)
+                                   net_cells = params.critic_net_cells,
+                                   learning_rate = params.critic_learning_rate)
         self.critic_target = Critic(self.state_size,
                                     self.action_size,
-                                    net_cells = critic_net_cells,
-                                    learning_rate = critic_learning_rate)
+                                    net_cells = params.critic_net_cells,
+                                    learning_rate = params.critic_learning_rate)
 
         # Initialize target model parameters with local model parameters
         self.critic_target.model.set_weights(self.critic_local.model.get_weights())
         self.actor_target.model.set_weights(self.actor_local.model.get_weights())
 
         # Noise process
-        self.exploration_mu = exploration_mu
-        self.exploration_theta = exploration_theta
-        self.exploration_sigma = exploration_sigma
+        self.exploration_mu = params.exploration_mu
+        self.exploration_theta = params.exploration_theta
+        self.exploration_sigma = params.exploration_sigma
         self.noise = OUNoise(self.action_size, 
-                             self.exploration_mu, 
-                             self.exploration_theta, 
+                             self.exploration_mu,
+                             self.exploration_theta,
                              self.exploration_sigma)
 
         # Replay memory
@@ -72,8 +64,8 @@ class DDPG():
         self.memory = ReplayBuffer(self.buffer_size, self.batch_size)
 
         # Algorithm parameters
-        self.gamma = gamma  # discount factor
-        self.tau = tau  # for soft update of target parameters
+        self.gamma = params.gamma  # discount factor
+        self.tau = params.tau  # for soft update of target parameters
 
         # Reward and score
         self.score = 0

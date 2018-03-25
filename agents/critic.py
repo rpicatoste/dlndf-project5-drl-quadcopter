@@ -1,4 +1,4 @@
-from keras import layers, models, optimizers, regularizers
+from keras import layers, models, optimizers, regularizers, initializers
 from keras import backend as K
 
 class Critic:
@@ -34,6 +34,7 @@ class Critic:
         # Add hidden layer(s) for state pathway
         net_states = layers.Dense(units = net_cells_list[0],
                                   activation = 'relu',
+                                  kernel_initializer = initializers.RandomNormal(),
                                   kernel_regularizer = regularizers.l2(0.01)
                                   )(net_states)
         net_states = layers.BatchNormalization()(net_states)
@@ -42,6 +43,7 @@ class Critic:
         ii = 1
         net_states = layers.Dense(units = net_cells_list[ii],
                                   activation = 'relu',
+                                  kernel_initializer = initializers.RandomNormal(),
                                   kernel_regularizer = regularizers.l2(0.01),
                                   name = 'net_states' + str(ii)
                                   )(net_states)
@@ -51,6 +53,7 @@ class Critic:
         # Add hidden layer(s) for action pathway
         net_actions = layers.Dense(units = net_cells_list[ii],
                                    activation = 'relu',
+                                   kernel_initializer = initializers.RandomNormal(),
                                    kernel_regularizer = regularizers.l2(0.01),
                                   name = 'net_actions' + str(ii)
                                    )(net_actions)
@@ -60,9 +63,10 @@ class Critic:
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
         # Combine state and action pathways
-        net = layers.Add()([net_states, net_actions])
+        net = layers.Concatenate()([net_states, net_actions])
         net = layers.Dense(units = net_cells_list[-1],
                            activation='relu',
+                           kernel_initializer = initializers.RandomNormal(),
                            kernel_regularizer=regularizers.l2(0.01)
                            )(net)
         net = layers.Activation('relu')(net)
@@ -72,6 +76,7 @@ class Critic:
         # Add final output layer to prduce action values (Q values)
         Q_values = layers.Dense(units = 1,
                                 name='q_values',
+                                kernel_initializer = initializers.RandomNormal(),
                                 kernel_regularizer = regularizers.l2(0.01)
                                 )(net)
 
